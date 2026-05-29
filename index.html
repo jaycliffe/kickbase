@@ -1,0 +1,1766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KickBase 2.0 — Club MIS</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sky: #3BAEDB;
+    --sky-light: #A8DCF0;
+    --sky-pale: #E8F6FC;
+    --sky-deep: #1A7FAD;
+    --sky-darker: #0F5A7A;
+    --white: #FFFFFF;
+    --off-white: #F5FAFD;
+    --slate: #2C3E50;
+    --text: #1E2D3A;
+    --text-muted: #6B8A99;
+    --border: #C5E4F2;
+    --success: #27AE60;
+    --warning: #F39C12;
+    --danger: #E74C3C;
+    --shadow: 0 4px 20px rgba(59,174,219,0.12);
+    --shadow-lg: 0 8px 40px rgba(59,174,219,0.18);
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--off-white);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ─── LOADING SCREEN ─── */
+  #loadingScreen {
+    position: fixed; inset: 0; z-index: 9999;
+    background: linear-gradient(135deg, #0A3D55 0%, #0F5A7A 35%, #1A7FAD 65%, #3BAEDB 100%);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 0;
+    transition: opacity 0.6s ease, visibility 0.6s ease;
+  }
+  #loadingScreen.fade-out {
+    opacity: 0; visibility: hidden;
+  }
+
+  /* Ripple rings */
+  .loader-rings {
+    position: relative; width: 120px; height: 120px; margin-bottom: 32px;
+  }
+  .loader-rings::before,
+  .loader-rings::after {
+    content: '';
+    position: absolute; inset: 0; border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.2);
+    animation: ringPulse 2s ease-out infinite;
+  }
+  .loader-rings::after { animation-delay: 0.8s; }
+  @keyframes ringPulse {
+    0%   { transform: scale(0.6); opacity: 0.8; }
+    100% { transform: scale(1.7); opacity: 0; }
+  }
+
+  .loader-crest {
+    position: absolute; inset: 0;
+    background: rgba(255,255,255,0.12);
+    border: 2.5px solid rgba(255,255,255,0.35);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    backdrop-filter: blur(6px);
+    animation: crestFloat 2s ease-in-out infinite;
+  }
+  @keyframes crestFloat {
+    0%, 100% { transform: translateY(0); }
+    50%       { transform: translateY(-6px); }
+  }
+  .loader-crest span { font-size: 46px; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3)); }
+
+  /* Brand text */
+  .loader-brand {
+    text-align: center; margin-bottom: 40px;
+    animation: fadeSlideUp 0.8s ease 0.2s both;
+  }
+  @keyframes fadeSlideUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .loader-brand h1 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 38px; font-weight: 800; letter-spacing: 3px;
+    color: #fff; text-shadow: 0 2px 16px rgba(0,0,0,0.25);
+  }
+  .loader-brand p {
+    font-size: 13px; color: rgba(255,255,255,0.6);
+    letter-spacing: 2px; text-transform: uppercase; margin-top: 4px;
+  }
+
+  /* Progress bar */
+  .loader-bar-wrap {
+    width: 220px; height: 4px; background: rgba(255,255,255,0.15);
+    border-radius: 99px; overflow: hidden; margin-bottom: 16px;
+    animation: fadeSlideUp 0.8s ease 0.4s both;
+  }
+  .loader-bar {
+    height: 100%; width: 0%; border-radius: 99px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.6), #fff);
+    box-shadow: 0 0 12px rgba(255,255,255,0.5);
+    transition: width 0.12s linear;
+  }
+
+  /* Status text */
+  .loader-status {
+    font-size: 12px; color: rgba(255,255,255,0.55);
+    letter-spacing: 1px; height: 18px;
+    animation: fadeSlideUp 0.8s ease 0.5s both;
+    transition: opacity 0.3s;
+  }
+
+  /* Dots */
+  .loader-dots {
+    display: flex; gap: 6px; margin-top: 28px;
+    animation: fadeSlideUp 0.8s ease 0.6s both;
+  }
+  .loader-dots span {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: rgba(255,255,255,0.4);
+    animation: dotBounce 1.2s ease-in-out infinite;
+  }
+  .loader-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .loader-dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes dotBounce {
+    0%, 80%, 100% { transform: scale(1);   background: rgba(255,255,255,0.35); }
+    40%            { transform: scale(1.5); background: rgba(255,255,255,0.9); }
+  }
+
+  /* ─── AUTH SCREENS ─── */
+  .auth-wrap {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #0F5A7A 0%, #1A7FAD 40%, #3BAEDB 100%);
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .auth-wrap::before {
+    content: '';
+    position: absolute;
+    width: 500px; height: 500px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.04);
+    top: -150px; right: -100px;
+  }
+  .auth-wrap::after {
+    content: '';
+    position: absolute;
+    width: 300px; height: 300px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.06);
+    bottom: -80px; left: -60px;
+  }
+  .auth-card {
+    background: var(--white);
+    border-radius: 24px;
+    padding: 48px 40px;
+    width: 100%;
+    max-width: 440px;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.3);
+    position: relative;
+    z-index: 1;
+    animation: slideUp 0.5s ease;
+  }
+  @keyframes slideUp {
+    from { opacity:0; transform: translateY(30px); }
+    to   { opacity:1; transform: translateY(0); }
+  }
+  .auth-logo {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+  .auth-logo .crest {
+    width: 72px; height: 72px;
+    background: linear-gradient(135deg, var(--sky-deep), var(--sky));
+    border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 32px; margin-bottom: 12px;
+    box-shadow: 0 8px 24px rgba(59,174,219,0.35);
+  }
+  .auth-logo h1 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 28px; font-weight: 800;
+    color: var(--sky-deeper, var(--sky-darker));
+    letter-spacing: 1px;
+  }
+  .auth-logo p { color: var(--text-muted); font-size: 13px; margin-top: 4px; }
+
+  .auth-tabs { display: flex; gap: 4px; background: var(--sky-pale); border-radius: 10px; padding: 4px; margin-bottom: 28px; }
+  .auth-tab {
+    flex: 1; padding: 9px; border: none; background: none; border-radius: 8px;
+    font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500;
+    cursor: pointer; color: var(--text-muted); transition: all 0.2s;
+  }
+  .auth-tab.active { background: var(--white); color: var(--sky-deep); box-shadow: var(--shadow); font-weight: 600; }
+
+  .form-group { margin-bottom: 18px; }
+  .form-group label { display: block; font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+  .form-group input, .form-group select, .form-group textarea {
+    width: 100%; padding: 12px 16px; border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm); background: var(--white);
+    font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--text);
+    transition: border-color 0.2s, box-shadow 0.2s; outline: none;
+  }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    border-color: var(--sky); box-shadow: 0 0 0 3px rgba(59,174,219,0.15);
+  }
+  .form-group textarea { resize: vertical; min-height: 80px; }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 12px 24px; border: none; border-radius: var(--radius-sm);
+    font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s; text-decoration: none;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--sky-deep), var(--sky));
+    color: var(--white); width: 100%;
+    box-shadow: 0 4px 14px rgba(59,174,219,0.35);
+  }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(59,174,219,0.45); }
+  .btn-secondary { background: var(--sky-pale); color: var(--sky-deep); border: 1.5px solid var(--border); }
+  .btn-secondary:hover { background: var(--sky-light); }
+  .btn-success { background: var(--success); color: var(--white); }
+  .btn-danger { background: var(--danger); color: var(--white); }
+  .btn-warning { background: var(--warning); color: var(--white); }
+  .btn-sm { padding: 7px 14px; font-size: 12px; }
+  .btn-icon { padding: 8px; border-radius: 8px; }
+
+  .auth-link {
+    display: block; text-align: center; margin-top: 20px;
+    font-size: 13px; color: var(--text-muted);
+  }
+  .auth-link a { color: var(--sky-deep); font-weight: 600; cursor: pointer; text-decoration: none; }
+  .auth-link a:hover { text-decoration: underline; }
+
+  .alert {
+    padding: 12px 16px; border-radius: var(--radius-sm); font-size: 13px;
+    margin-bottom: 16px; display: none;
+  }
+  .alert-success { background: #D5F5E3; color: #1E8449; border: 1px solid #A9DFBF; display: block; }
+  .alert-error { background: #FADBD8; color: #C0392B; border: 1px solid #F5B7B1; display: block; }
+
+  /* ─── MAIN APP ─── */
+  .app-shell { display: flex; min-height: 100vh; }
+
+  /* Sidebar */
+  .sidebar {
+    width: 260px; min-width: 260px; background: linear-gradient(180deg, #0F5A7A 0%, #1A7FAD 100%);
+    display: flex; flex-direction: column;
+    position: fixed; top: 0; left: 0; bottom: 0; z-index: 100;
+    transition: transform 0.3s ease; overflow-y: auto;
+  }
+  .sidebar.collapsed { transform: translateX(-260px); }
+
+  .sidebar-header {
+    padding: 28px 24px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  .sidebar-brand {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .sidebar-brand .crest {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+    display: flex; align-items: center; justify-content: center; font-size: 20px;
+    border: 2px solid rgba(255,255,255,0.25);
+  }
+  .sidebar-brand-text { color: var(--white); }
+  .sidebar-brand-text h2 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 18px; font-weight: 800; letter-spacing: 0.5px;
+  }
+  .sidebar-brand-text p { font-size: 11px; opacity: 0.65; margin-top: 1px; }
+
+  .sidebar-user {
+    margin: 16px 16px 8px;
+    background: rgba(255,255,255,0.08); border-radius: 10px;
+    padding: 12px 14px; display: flex; align-items: center; gap: 10px;
+  }
+  .user-avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: rgba(255,255,255,0.2); display: flex; align-items: center;
+    justify-content: center; font-size: 15px; font-weight: 700; color: var(--white);
+    flex-shrink: 0; overflow: hidden;
+  }
+  .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .user-info .name { color: var(--white); font-size: 13px; font-weight: 600; }
+  .user-info .role { color: rgba(255,255,255,0.55); font-size: 11px; }
+
+  .sidebar-nav { padding: 12px 12px; flex: 1; }
+  .nav-section { margin-bottom: 6px; }
+  .nav-section-label {
+    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px;
+    color: rgba(255,255,255,0.4); padding: 8px 12px 4px;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 11px 14px; border-radius: 10px; cursor: pointer;
+    color: rgba(255,255,255,0.75); font-size: 14px; font-weight: 500;
+    transition: all 0.2s; margin-bottom: 2px;
+  }
+  .nav-item:hover { background: rgba(255,255,255,0.1); color: var(--white); }
+  .nav-item.active { background: rgba(255,255,255,0.18); color: var(--white); font-weight: 600; }
+  .nav-item .icon { font-size: 18px; width: 22px; text-align: center; flex-shrink: 0; }
+  .nav-badge {
+    margin-left: auto; background: var(--sky-light); color: var(--sky-darker);
+    font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 20px;
+  }
+
+  .sidebar-footer {
+    padding: 16px; border-top: 1px solid rgba(255,255,255,0.1);
+  }
+  .sidebar-footer .nav-item { color: rgba(255,255,255,0.6); }
+
+  /* Topbar */
+  .topbar {
+    height: 64px; background: var(--white);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 28px; position: sticky; top: 0; z-index: 50;
+    box-shadow: 0 2px 8px rgba(59,174,219,0.08);
+  }
+  .topbar-left { display: flex; align-items: center; gap: 16px; }
+  .topbar-right { display: flex; align-items: center; gap: 12px; }
+
+  .menu-toggle {
+    display: none; background: none; border: none; cursor: pointer;
+    padding: 8px; border-radius: 8px; color: var(--sky-deep); font-size: 20px;
+  }
+  .page-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 22px; font-weight: 700; color: var(--sky-darker); letter-spacing: 0.5px;
+  }
+  .topbar-btn {
+    width: 38px; height: 38px; border-radius: 10px; border: 1.5px solid var(--border);
+    background: var(--white); cursor: pointer; font-size: 16px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--sky-deep); transition: all 0.2s; position: relative;
+  }
+  .topbar-btn:hover { background: var(--sky-pale); }
+  .notif-dot {
+    position: absolute; top: 6px; right: 6px;
+    width: 8px; height: 8px; border-radius: 50%; background: var(--danger);
+    border: 2px solid var(--white);
+  }
+
+  /* Main */
+  .main-content {
+    margin-left: 260px;
+    flex: 1; display: flex; flex-direction: column; min-height: 100vh;
+    transition: margin-left 0.3s ease;
+  }
+  .main-content.expanded { margin-left: 0; }
+
+  .page-content { padding: 28px; flex: 1; }
+
+  /* Sections */
+  .section { display: none; }
+  .section.active { display: block; animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform: translateY(0); } }
+
+  /* Cards */
+  .card {
+    background: var(--white); border-radius: var(--radius);
+    border: 1px solid var(--border); overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  .card-header {
+    padding: 18px 24px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    background: linear-gradient(90deg, var(--sky-pale), var(--white));
+  }
+  .card-header h3 {
+    font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 700;
+    color: var(--sky-darker); letter-spacing: 0.4px;
+  }
+  .card-body { padding: 24px; }
+
+  /* Stats row */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 28px; }
+  .stat-card {
+    background: var(--white); border-radius: var(--radius); border: 1px solid var(--border);
+    padding: 20px 22px; position: relative; overflow: hidden;
+    box-shadow: var(--shadow); transition: transform 0.2s;
+  }
+  .stat-card:hover { transform: translateY(-2px); }
+  .stat-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, var(--sky-deep), var(--sky));
+  }
+  .stat-icon { font-size: 28px; margin-bottom: 8px; }
+  .stat-val {
+    font-family: 'Barlow Condensed', sans-serif; font-size: 32px;
+    font-weight: 800; color: var(--sky-darker);
+  }
+  .stat-label { font-size: 12px; color: var(--text-muted); font-weight: 500; margin-top: 2px; }
+
+  /* Table */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    text-align: left; padding: 12px 16px; font-size: 11px;
+    font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px;
+    color: var(--sky-darker); background: var(--sky-pale);
+    border-bottom: 1.5px solid var(--border);
+  }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background 0.15s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--sky-pale); }
+  tbody td { padding: 13px 16px; font-size: 14px; color: var(--text); }
+  .badge {
+    display: inline-block; padding: 3px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+  }
+  .badge-sky { background: var(--sky-pale); color: var(--sky-deep); }
+  .badge-green { background: #D5F5E3; color: #1E8449; }
+  .badge-yellow { background: #FEF9E7; color: #B7770D; }
+  .badge-red { background: #FADBD8; color: #C0392B; }
+  .badge-gray { background: #F2F3F4; color: #7F8C8D; }
+
+  /* Avatar cell */
+  .player-cell { display: flex; align-items: center; gap: 12px; }
+  .player-avatar {
+    width: 38px; height: 38px; border-radius: 50%; background: var(--sky-light);
+    flex-shrink: 0; overflow: hidden; display: flex; align-items: center;
+    justify-content: center; font-weight: 700; color: var(--sky-darker);
+    font-size: 14px;
+  }
+  .player-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .player-cell .pname { font-weight: 600; }
+  .player-cell .pid { font-size: 11px; color: var(--text-muted); }
+
+  /* Modals */
+  .modal-backdrop {
+    position: fixed; inset: 0; background: rgba(15,50,70,0.5);
+    z-index: 200; display: flex; align-items: center; justify-content: center;
+    padding: 20px; backdrop-filter: blur(3px); opacity: 0; pointer-events: none;
+    transition: opacity 0.25s;
+  }
+  .modal-backdrop.open { opacity: 1; pointer-events: all; }
+  .modal {
+    background: var(--white); border-radius: 20px; width: 100%; max-width: 560px;
+    max-height: 90vh; overflow-y: auto;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.25);
+    transform: scale(0.95); transition: transform 0.25s;
+  }
+  .modal-backdrop.open .modal { transform: scale(1); }
+  .modal-header {
+    padding: 20px 24px 16px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    background: linear-gradient(90deg, var(--sky-pale), var(--white));
+  }
+  .modal-header h3 {
+    font-family: 'Barlow Condensed', sans-serif; font-size: 20px;
+    font-weight: 700; color: var(--sky-darker);
+  }
+  .modal-close {
+    width: 32px; height: 32px; border-radius: 8px; border: none;
+    background: var(--border); cursor: pointer; font-size: 16px;
+    display: flex; align-items: center; justify-content: center; color: var(--text-muted);
+    transition: all 0.2s;
+  }
+  .modal-close:hover { background: var(--danger); color: var(--white); }
+  .modal-body { padding: 24px; }
+  .modal-footer {
+    padding: 16px 24px; border-top: 1px solid var(--border);
+    display: flex; justify-content: flex-end; gap: 10px;
+    background: var(--off-white);
+  }
+
+  /* Photo upload */
+  .photo-upload {
+    width: 100px; height: 100px; border-radius: 50%; border: 2.5px dashed var(--sky-light);
+    background: var(--sky-pale); cursor: pointer; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; margin: 0 auto 20px;
+    overflow: hidden; position: relative; transition: all 0.2s;
+  }
+  .photo-upload:hover { border-color: var(--sky); background: #D6EFF8; }
+  .photo-upload img { width: 100%; height: 100%; object-fit: cover; }
+  .photo-upload .upload-hint { font-size: 10px; color: var(--text-muted); text-align: center; padding: 8px; }
+  .photo-upload input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
+  /* Form row */
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+  /* Duty Board */
+  .duty-board { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+  .duty-card {
+    background: var(--white); border-radius: var(--radius); border: 1px solid var(--border);
+    padding: 18px; box-shadow: var(--shadow); position: relative;
+    transition: transform 0.2s;
+  }
+  .duty-card:hover { transform: translateY(-2px); }
+  .duty-card .dc-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .duty-card .dc-week { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--sky-deep); }
+  .duty-card .dc-player { font-weight: 600; font-size: 15px; color: var(--text); margin-bottom: 4px; }
+  .duty-card .dc-status { font-size: 12px; }
+  .duty-card .dc-actions { display: flex; gap: 6px; margin-top: 12px; }
+  .duty-card .stripe {
+    position: absolute; top: 0; left: 0; right: 0; height: 4px; border-radius: 14px 14px 0 0;
+  }
+  .stripe-green { background: var(--success); }
+  .stripe-orange { background: var(--warning); }
+  .stripe-red { background: var(--danger); }
+
+  /* Finance */
+  .fin-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+  .fin-box {
+    background: var(--white); border-radius: var(--radius); border: 1px solid var(--border);
+    padding: 20px; text-align: center; box-shadow: var(--shadow);
+  }
+  .fin-box .fb-amount {
+    font-family: 'Barlow Condensed', sans-serif; font-size: 28px; font-weight: 800;
+  }
+  .fin-box .fb-label { font-size: 12px; color: var(--text-muted); font-weight: 500; margin-top: 4px; }
+  .fin-box.income .fb-amount { color: var(--success); }
+  .fin-box.expense .fb-amount { color: var(--danger); }
+  .fin-box.balance .fb-amount { color: var(--sky-darker); }
+
+  /* About */
+  .about-hero {
+    background: linear-gradient(135deg, #0F5A7A 0%, #3BAEDB 100%);
+    border-radius: var(--radius); padding: 40px; text-align: center;
+    color: var(--white); margin-bottom: 24px; position: relative; overflow: hidden;
+  }
+  .about-hero::before {
+    content: '⚽'; position: absolute; font-size: 180px; right: -20px;
+    bottom: -40px; opacity: 0.06;
+  }
+  .about-hero h2 {
+    font-family: 'Barlow Condensed', sans-serif; font-size: 42px;
+    font-weight: 800; letter-spacing: 1px; margin-bottom: 8px;
+  }
+  .about-hero p { opacity: 0.8; font-size: 15px; }
+  .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+  /* Search + filter bar */
+  .toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+  .search-box {
+    position: relative; flex: 1; min-width: 200px;
+  }
+  .search-box input {
+    width: 100%; padding: 10px 16px 10px 40px; border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm); font-family: 'DM Sans', sans-serif;
+    font-size: 14px; background: var(--white); outline: none; transition: border-color 0.2s;
+  }
+  .search-box input:focus { border-color: var(--sky); }
+  .search-box .si { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 16px; }
+
+  /* Toast */
+  .toast-container {
+    position: fixed; bottom: 24px; right: 24px; z-index: 999;
+    display: flex; flex-direction: column; gap: 8px; pointer-events: none;
+  }
+  .toast {
+    background: var(--slate); color: var(--white); padding: 12px 18px;
+    border-radius: 10px; font-size: 13px; font-weight: 500;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    animation: toastIn 0.3s ease; pointer-events: all;
+    max-width: 320px; display: flex; align-items: center; gap: 8px;
+  }
+  .toast.toast-success { background: var(--success); }
+  .toast.toast-error { background: var(--danger); }
+  @keyframes toastIn { from { opacity:0; transform: translateX(40px); } to { opacity:1; transform: translateX(0); } }
+  @keyframes toastOut { to { opacity:0; transform: translateX(40px); } }
+
+  /* Tabs within section */
+  .section-tabs {
+    display: flex; gap: 4px; border-bottom: 2px solid var(--border); margin-bottom: 24px;
+  }
+  .section-tab {
+    padding: 10px 20px; border: none; background: none; cursor: pointer;
+    font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500;
+    color: var(--text-muted); border-bottom: 2.5px solid transparent;
+    margin-bottom: -2px; transition: all 0.2s;
+  }
+  .section-tab.active { color: var(--sky-deep); border-bottom-color: var(--sky); font-weight: 600; }
+
+  /* Dashboard welcome */
+  .dash-welcome {
+    background: linear-gradient(135deg, var(--sky-deep), var(--sky));
+    border-radius: var(--radius); padding: 28px 32px; color: var(--white);
+    margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between;
+    position: relative; overflow: hidden;
+  }
+  .dash-welcome::after {
+    content: '🏆'; position: absolute; right: 24px; font-size: 80px; opacity: 0.15;
+  }
+  .dash-welcome h2 {
+    font-family: 'Barlow Condensed', sans-serif; font-size: 28px; font-weight: 800;
+  }
+  .dash-welcome p { opacity: 0.8; margin-top: 4px; font-size: 14px; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .sidebar { transform: translateX(-260px); }
+    .sidebar.open { transform: translateX(0); }
+    .main-content { margin-left: 0; }
+    .menu-toggle { display: flex; }
+    .form-row { grid-template-columns: 1fr; }
+    .fin-summary { grid-template-columns: 1fr; }
+    .about-grid { grid-template-columns: 1fr; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .auth-card { padding: 32px 24px; }
+    .page-content { padding: 16px; }
+    .topbar { padding: 0 16px; }
+  }
+  @media (max-width: 480px) {
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+    .duty-board { grid-template-columns: 1fr; }
+    .modal { border-radius: 16px; }
+  }
+
+  .hidden { display: none !important; }
+  .flex { display: flex; }
+  .items-center { align-items: center; }
+  .gap-2 { gap: 8px; }
+  .gap-3 { gap: 12px; }
+  .mt-2 { margin-top: 8px; }
+  .mt-3 { margin-top: 12px; }
+  .mb-3 { margin-bottom: 12px; }
+  .text-muted { color: var(--text-muted); font-size: 13px; }
+  .text-right { text-align: right; }
+  .fw-700 { font-weight: 700; }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center; padding: 60px 20px;
+    color: var(--text-muted);
+  }
+  .empty-state .empty-icon { font-size: 52px; margin-bottom: 12px; }
+  .empty-state h4 { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+  .empty-state p { font-size: 13px; }
+
+  /* Overlay on mobile */
+  .sidebar-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35);
+    z-index: 99;
+  }
+  @media (max-width: 768px) {
+    .sidebar-overlay.show { display: block; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ LOADING SCREEN ═══════════════ -->
+<div id="loadingScreen">
+  <div class="loader-rings">
+    <div class="loader-crest"><span>⚽</span></div>
+  </div>
+  <div class="loader-brand">
+    <h1>KICKBASE 2.0</h1>
+    <p>Club Management System</p>
+  </div>
+  <div class="loader-bar-wrap">
+    <div class="loader-bar" id="loaderBar"></div>
+  </div>
+  <div class="loader-status" id="loaderStatus">Initialising system…</div>
+  <div class="loader-dots">
+    <span></span><span></span><span></span>
+  </div>
+</div>
+
+<!-- ═══════════════ AUTH SCREENS ═══════════════ -->
+<div id="authScreen" class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="crest">⚽</div>
+      <h1>KICKBASE 2.0</h1>
+      <p>Football Club Management Information System</p>
+    </div>
+
+    <div id="loginPanel">
+      <div class="auth-tabs">
+        <button class="auth-tab active" onclick="showAuthTab('login')">Sign In</button>
+        <button class="auth-tab" onclick="showAuthTab('register')">Register</button>
+      </div>
+      <div id="loginAlert"></div>
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" id="loginEmail" placeholder="you@club.com">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="loginPassword" placeholder="••••••••">
+      </div>
+      <button class="btn btn-primary" onclick="doLogin()">Sign In →</button>
+      <div class="auth-link"><a onclick="showAuthTab('recover')">Forgot password?</a></div>
+    </div>
+
+    <div id="registerPanel" class="hidden">
+      <div class="auth-tabs">
+        <button class="auth-tab" onclick="showAuthTab('login')">Sign In</button>
+        <button class="auth-tab active" onclick="showAuthTab('register')">Register</button>
+      </div>
+      <div id="regAlert"></div>
+      <div class="form-row">
+        <div class="form-group"><label>First Name</label><input type="text" id="regFirst" placeholder="John"></div>
+        <div class="form-group"><label>Last Name</label><input type="text" id="regLast" placeholder="Doe"></div>
+      </div>
+      <div class="form-group"><label>Email Address</label><input type="email" id="regEmail" placeholder="you@club.com"></div>
+      <div class="form-group">
+        <label>Role</label>
+        <select id="regRole">
+          <option value="admin">Club Admin</option>
+          <option value="coach">Coach</option>
+          <option value="manager">Manager</option>
+          <option value="staff">Staff</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Password</label><input type="password" id="regPass" placeholder="Min 6 characters"></div>
+      <div class="form-group"><label>Confirm Password</label><input type="password" id="regPass2" placeholder="Repeat password"></div>
+      <button class="btn btn-primary" onclick="doRegister()">Create Account →</button>
+    </div>
+
+    <div id="recoverPanel" class="hidden">
+      <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;margin-bottom:20px;color:var(--sky-darker)">Reset Password</h3>
+      <div id="recoverAlert"></div>
+      <div class="form-group"><label>Email Address</label><input type="email" id="recoverEmail" placeholder="you@club.com"></div>
+      <button class="btn btn-primary" onclick="doRecover()">Send Reset Link →</button>
+      <div class="auth-link"><a onclick="showAuthTab('login')">← Back to Sign In</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ APP SHELL ═══════════════ -->
+<div id="appShell" class="app-shell hidden">
+
+  <!-- Sidebar overlay (mobile) -->
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+  <!-- Sidebar -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-brand">
+        <div class="crest">⚽</div>
+        <div class="sidebar-brand-text">
+          <h2>KICKBASE 2.0</h2>
+          <p id="clubTagline">Club MIS v2.0</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-user">
+      <div class="user-avatar" id="sidebarAvatar">U</div>
+      <div class="user-info">
+        <div class="name" id="sidebarUserName">User</div>
+        <div class="role" id="sidebarUserRole">Role</div>
+      </div>
+    </div>
+
+    <div class="sidebar-nav">
+      <div class="nav-section">
+        <div class="nav-section-label">Main</div>
+        <div class="nav-item active" onclick="navigate('dashboard')">
+          <span class="icon">📊</span> Dashboard
+        </div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-label">Club</div>
+        <div class="nav-item" onclick="navigate('players')">
+          <span class="icon">👕</span> Players
+          <span class="nav-badge" id="playerBadge">0</span>
+        </div>
+        <div class="nav-item" onclick="navigate('duties')">
+          <span class="icon">🧺</span> Kit Duties
+        </div>
+        <div class="nav-item" onclick="navigate('finances')">
+          <span class="icon">💰</span> Finances
+        </div>
+        <div class="nav-item" onclick="navigate('about')">
+          <span class="icon">🏟️</span> About Team
+        </div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-label">Account</div>
+        <div class="nav-item" onclick="navigate('users')">
+          <span class="icon">👥</span> Users
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="nav-item" onclick="doLogout()">
+        <span class="icon">🚪</span> Sign Out
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main -->
+  <div class="main-content" id="mainContent">
+    <!-- Topbar -->
+    <div class="topbar">
+      <div class="topbar-left">
+        <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+        <div class="page-title" id="pageTitle">Dashboard</div>
+      </div>
+      <div class="topbar-right">
+        <button class="topbar-btn" title="Notifications">🔔<span class="notif-dot"></span></button>
+        <button class="topbar-btn" onclick="navigate('users')" title="Account">⚙️</button>
+      </div>
+    </div>
+
+    <!-- Page Content -->
+    <div class="page-content">
+
+      <!-- ── DASHBOARD ── -->
+      <div class="section active" id="sec-dashboard">
+        <div class="dash-welcome">
+          <div>
+            <h2 id="welcomeText">Welcome back!</h2>
+            <p id="welcomeSub">Here's your club overview for today.</p>
+          </div>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon">👕</div>
+            <div class="stat-val" id="stat-players">0</div>
+            <div class="stat-label">Registered Players</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">💰</div>
+            <div class="stat-val" id="stat-income">0</div>
+            <div class="stat-label">Total Income (KES)</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">📋</div>
+            <div class="stat-val" id="stat-duties">0</div>
+            <div class="stat-label">Duty Assignments</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">👥</div>
+            <div class="stat-val" id="stat-users">0</div>
+            <div class="stat-label">System Users</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3>⚡ Recent Activity</h3></div>
+          <div class="card-body">
+            <div id="recentActivity">
+              <div class="empty-state">
+                <div class="empty-icon">📋</div>
+                <h4>No recent activity</h4>
+                <p>Actions will appear here as you use the system.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── PLAYERS ── -->
+      <div class="section" id="sec-players">
+        <div class="toolbar">
+          <div class="search-box">
+            <span class="si">🔍</span>
+            <input type="text" id="playerSearch" placeholder="Search players…" oninput="renderPlayers()">
+          </div>
+          <select id="positionFilter" onchange="renderPlayers()" style="padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:14px;background:var(--white);outline:none;">
+            <option value="">All Positions</option>
+            <option>Goalkeeper</option>
+            <option>Defender</option>
+            <option>Midfielder</option>
+            <option>Forward</option>
+          </select>
+          <button class="btn btn-primary" style="width:auto" onclick="openPlayerModal()">+ Add Player</button>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <h3>👕 Player Roster</h3>
+            <span class="badge badge-sky" id="playerCountBadge">0 Players</span>
+          </div>
+          <div class="card-body" style="padding:0">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Player</th>
+                    <th>DOB</th>
+                    <th>ID / Cert No.</th>
+                    <th>Jersey</th>
+                    <th>Position</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="playerTableBody">
+                  <tr><td colspan="6"><div class="empty-state"><div class="empty-icon">👕</div><h4>No players yet</h4><p>Add your first player to get started.</p></div></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── KIT DUTIES ── -->
+      <div class="section" id="sec-duties">
+        <div class="toolbar">
+          <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;color:var(--sky-darker);flex:1">🧺 Kit Cleaning Duty Board</h2>
+          <button class="btn btn-primary" style="width:auto" onclick="openDutyModal()">+ Assign Duty</button>
+        </div>
+        <div class="duty-board" id="dutyBoard">
+          <div class="empty-state" style="grid-column:1/-1">
+            <div class="empty-icon">🧺</div>
+            <h4>No duties assigned</h4>
+            <p>Assign kit cleaning duties to your squad members.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── FINANCES ── -->
+      <div class="section" id="sec-finances">
+        <div class="fin-summary">
+          <div class="fin-box income">
+            <div class="fb-amount" id="finIncome">KES 0</div>
+            <div class="fb-label">Total Income</div>
+          </div>
+          <div class="fin-box expense">
+            <div class="fb-amount" id="finExpense">KES 0</div>
+            <div class="fb-label">Total Expenses</div>
+          </div>
+          <div class="fin-box balance">
+            <div class="fb-amount" id="finBalance">KES 0</div>
+            <div class="fb-label">Net Balance</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <h3>💰 Financial Records</h3>
+            <div class="flex gap-2">
+              <button class="btn btn-secondary btn-sm" onclick="exportFinancePDF()">📄 Export PDF</button>
+              <button class="btn btn-primary btn-sm" style="width:auto" onclick="openFinModal()">+ Add Entry</button>
+            </div>
+          </div>
+          <div class="card-body" style="padding:0">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Description</th>
+                    <th>Category</th>
+                    <th>Type</th>
+                    <th>Amount (KES)</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="finTableBody">
+                  <tr><td colspan="6"><div class="empty-state"><div class="empty-icon">💰</div><h4>No financial records</h4><p>Add income or expense entries.</p></div></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── ABOUT TEAM ── -->
+      <div class="section" id="sec-about">
+        <div class="about-hero">
+          <h2 id="aboutClubName">⚽ YOUR FOOTBALL CLUB</h2>
+          <p id="aboutClubMotto">Excellence. Teamwork. Victory.</p>
+        </div>
+        <div class="about-grid">
+          <div class="card">
+            <div class="card-header"><h3>🏟️ Club Details</h3></div>
+            <div class="card-body">
+              <div id="aboutDetails">
+                <div class="form-group"><label>Club Name</label><input type="text" id="clubName" placeholder="e.g. Nairobi City FC"></div>
+                <div class="form-group"><label>Founded Year</label><input type="text" id="clubFounded" placeholder="e.g. 2005"></div>
+                <div class="form-group"><label>Home Ground</label><input type="text" id="clubGround" placeholder="e.g. City Stadium"></div>
+                <div class="form-group"><label>League / Division</label><input type="text" id="clubLeague" placeholder="e.g. National Super League"></div>
+                <div class="form-group"><label>Club Motto</label><input type="text" id="clubMotto" placeholder="e.g. Together We Rise"></div>
+                <div class="form-group"><label>Club Colors</label><input type="text" id="clubColors" placeholder="e.g. Light Blue & White"></div>
+                <button class="btn btn-primary" style="width:auto" onclick="saveAbout()">💾 Save Club Info</button>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h3>📞 Contact & Management</h3></div>
+            <div class="card-body">
+              <div class="form-group"><label>Club Chairman</label><input type="text" id="clubChairman" placeholder="Full name"></div>
+              <div class="form-group"><label>Head Coach</label><input type="text" id="clubCoach" placeholder="Full name"></div>
+              <div class="form-group"><label>Club Manager</label><input type="text" id="clubManager" placeholder="Full name"></div>
+              <div class="form-group"><label>Email Address</label><input type="email" id="clubEmail" placeholder="info@club.com"></div>
+              <div class="form-group"><label>Phone Number</label><input type="text" id="clubPhone" placeholder="+254 7XX XXX XXX"></div>
+              <div class="form-group"><label>About the Club</label><textarea id="clubAbout" placeholder="Write a brief description of the club…"></textarea></div>
+              <button class="btn btn-primary" style="width:auto" onclick="saveAbout()">💾 Save Contact Info</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── USERS ── -->
+      <div class="section" id="sec-users">
+        <div class="toolbar">
+          <div class="search-box">
+            <span class="si">🔍</span>
+            <input type="text" id="userSearch" placeholder="Search users…" oninput="renderUsers()">
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <h3>👥 System Users</h3>
+            <span class="badge badge-sky" id="userCountBadge">0 Users</span>
+          </div>
+          <div class="card-body" style="padding:0">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>User</th><th>Email</th><th>Role</th><th>Registered</th><th>Actions</th></tr>
+                </thead>
+                <tbody id="userTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /page-content -->
+  </div><!-- /main-content -->
+</div><!-- /app-shell -->
+
+<!-- ═══════════════ MODALS ═══════════════ -->
+
+<!-- Player Modal -->
+<div class="modal-backdrop" id="playerModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="playerModalTitle">Add New Player</h3>
+      <button class="modal-close" onclick="closeModal('playerModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="photo-upload" id="photoUploadBox" onclick="document.getElementById('photoInput').click()">
+        <img id="photoPreview" src="" style="display:none">
+        <div class="upload-hint" id="uploadHint">📷<br>Tap to upload<br>passport photo</div>
+        <input type="file" id="photoInput" accept="image/*" onchange="previewPhoto(this)">
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>First Name *</label><input type="text" id="pFirstName" placeholder="John"></div>
+        <div class="form-group"><label>Last Name *</label><input type="text" id="pLastName" placeholder="Doe"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Date of Birth *</label><input type="date" id="pDOB"></div>
+        <div class="form-group"><label>Jersey Number *</label><input type="number" id="pJersey" min="1" max="99" placeholder="e.g. 10"></div>
+      </div>
+      <div class="form-group"><label>ID / Birth Certificate Number *</label><input type="text" id="pID" placeholder="e.g. 12345678 or BC/2005/001234"></div>
+      <div class="form-group">
+        <label>Position *</label>
+        <select id="pPosition">
+          <option value="">Select position…</option>
+          <option>Goalkeeper</option>
+          <option>Defender</option>
+          <option>Midfielder</option>
+          <option>Forward</option>
+        </select>
+      </div>
+      <input type="hidden" id="pEditIndex" value="">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('playerModal')">Cancel</button>
+      <button class="btn btn-primary" style="width:auto" onclick="savePlayer()">💾 Save Player</button>
+    </div>
+  </div>
+</div>
+
+<!-- Duty Modal -->
+<div class="modal-backdrop" id="dutyModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="dutyModalTitle">Assign Kit Duty</h3>
+      <button class="modal-close" onclick="closeModal('dutyModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Week / Period *</label>
+        <input type="text" id="dutyWeek" placeholder="e.g. Week 1 — Jan 6-12, 2025">
+      </div>
+      <div class="form-group">
+        <label>Assigned Player *</label>
+        <select id="dutyPlayer">
+          <option value="">Select player…</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Duty Description</label>
+        <textarea id="dutyDesc" placeholder="e.g. Wash and iron all training kits, hang jerseys…"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Status</label>
+        <select id="dutyStatus">
+          <option value="pending">⏳ Pending</option>
+          <option value="in-progress">🔄 In Progress</option>
+          <option value="done">✅ Completed</option>
+        </select>
+      </div>
+      <input type="hidden" id="dutyEditIndex" value="">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('dutyModal')">Cancel</button>
+      <button class="btn btn-primary" style="width:auto" onclick="saveDuty()">💾 Assign Duty</button>
+    </div>
+  </div>
+</div>
+
+<!-- Finance Modal -->
+<div class="modal-backdrop" id="finModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="finModalTitle">Add Financial Entry</h3>
+      <button class="modal-close" onclick="closeModal('finModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group"><label>Date *</label><input type="date" id="finDate"></div>
+        <div class="form-group">
+          <label>Type *</label>
+          <select id="finType">
+            <option value="income">💚 Income</option>
+            <option value="expense">🔴 Expense</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group"><label>Description *</label><input type="text" id="finDesc" placeholder="e.g. Monthly player registration fees"></div>
+      <div class="form-group">
+        <label>Category *</label>
+        <select id="finCat">
+          <option>Registration Fees</option>
+          <option>Sponsorship</option>
+          <option>Match Revenue</option>
+          <option>Training Expenses</option>
+          <option>Kit & Equipment</option>
+          <option>Travel</option>
+          <option>Salaries</option>
+          <option>Ground Maintenance</option>
+          <option>Medical</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Amount (KES) *</label><input type="number" id="finAmount" min="0" placeholder="e.g. 15000"></div>
+      <div class="form-group"><label>Notes (Optional)</label><textarea id="finNotes" placeholder="Additional details…"></textarea></div>
+      <input type="hidden" id="finEditIndex" value="">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('finModal')">Cancel</button>
+      <button class="btn btn-primary" style="width:auto" onclick="saveFinance()">💾 Save Entry</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ═══════════════ JAVASCRIPT ═══════════════ -->
+<script>
+// ─────────────────────────────────────────────
+//  DATA STORE (localStorage)
+// ─────────────────────────────────────────────
+const LS = {
+  get: k => { try { return JSON.parse(localStorage.getItem(k)) || []; } catch { return []; } },
+  getObj: k => { try { return JSON.parse(localStorage.getItem(k)) || {}; } catch { return {}; } },
+  set: (k,v) => localStorage.setItem(k, JSON.stringify(v)),
+};
+
+let currentUser = null;
+let editingPlayer = null;
+let editingDuty = null;
+let editingFin = null;
+let activityLog = [];
+
+// ─────────────────────────────────────────────
+//  AUTH
+// ─────────────────────────────────────────────
+function showAuthTab(tab) {
+  document.getElementById('loginPanel').classList.add('hidden');
+  document.getElementById('registerPanel').classList.add('hidden');
+  document.getElementById('recoverPanel').classList.add('hidden');
+  document.getElementById(tab === 'login' ? 'loginPanel' : tab === 'register' ? 'registerPanel' : 'recoverPanel').classList.remove('hidden');
+}
+
+function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass  = document.getElementById('loginPassword').value;
+  const users = LS.get('kb2_users');
+  const user  = users.find(u => u.email === email && u.password === pass);
+  if (!user) return showAlert('loginAlert', 'Invalid email or password.', 'error');
+  currentUser = user;
+  localStorage.setItem('kb2_session', JSON.stringify(user));
+  launchApp();
+}
+
+function doRegister() {
+  const first = document.getElementById('regFirst').value.trim();
+  const last  = document.getElementById('regLast').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const role  = document.getElementById('regRole').value;
+  const pass  = document.getElementById('regPass').value;
+  const pass2 = document.getElementById('regPass2').value;
+  if (!first || !last || !email || !pass) return showAlert('regAlert', 'Please fill all fields.', 'error');
+  if (pass.length < 6) return showAlert('regAlert', 'Password must be at least 6 characters.', 'error');
+  if (pass !== pass2) return showAlert('regAlert', 'Passwords do not match.', 'error');
+  const users = LS.get('kb2_users');
+  if (users.find(u => u.email === email)) return showAlert('regAlert', 'Email already registered.', 'error');
+  const newUser = { id: Date.now(), first, last, email, role, password: pass, registered: new Date().toISOString() };
+  users.push(newUser);
+  LS.set('kb2_users', users);
+  showAlert('regAlert', 'Account created! Please sign in.', 'success');
+  setTimeout(() => showAuthTab('login'), 1500);
+}
+
+function doRecover() {
+  const email = document.getElementById('recoverEmail').value.trim();
+  const users = LS.get('kb2_users');
+  if (!email) return showAlert('recoverAlert', 'Please enter your email.', 'error');
+  if (!users.find(u => u.email === email)) return showAlert('recoverAlert', 'No account found with that email.', 'error');
+  showAlert('recoverAlert', `Password reset link sent to ${email}. (Demo: check registered email)`, 'success');
+}
+
+function showAlert(id, msg, type) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.className = 'alert alert-' + type;
+  el.textContent = msg;
+  setTimeout(() => { el.className = 'alert'; el.textContent = ''; }, 4000);
+}
+
+function doLogout() {
+  currentUser = null;
+  localStorage.removeItem('kb2_session');
+  document.getElementById('appShell').classList.add('hidden');
+  document.getElementById('authScreen').classList.remove('hidden');
+}
+
+function launchApp() {
+  document.getElementById('authScreen').classList.add('hidden');
+  document.getElementById('appShell').classList.remove('hidden');
+  document.getElementById('sidebarUserName').textContent = currentUser.first + ' ' + currentUser.last;
+  document.getElementById('sidebarUserRole').textContent = capitalize(currentUser.role);
+  document.getElementById('sidebarAvatar').textContent = currentUser.first[0] + currentUser.last[0];
+  document.getElementById('welcomeText').textContent = 'Welcome back, ' + currentUser.first + '!';
+  document.getElementById('welcomeSub').textContent = new Date().toLocaleDateString('en-KE', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+  navigate('dashboard');
+}
+
+// Auto-login
+window.addEventListener('load', () => {
+  // Seed demo admin if no users
+  if (!LS.get('kb2_users').length) {
+    LS.set('kb2_users', [{ id: 1, first:'Admin', last:'User', email:'admin@fc.com', role:'admin', password:'admin123', registered: new Date().toISOString() }]);
+  }
+  const sess = localStorage.getItem('kb2_session');
+  if (sess) {
+    currentUser = JSON.parse(sess);
+    launchApp();
+  }
+});
+
+// ─────────────────────────────────────────────
+//  NAVIGATION
+// ─────────────────────────────────────────────
+const sectionMap = { dashboard:'Dashboard', players:'Players', duties:'Kit Duties', finances:'Finances', about:'About Team', users:'Users' };
+
+function navigate(sec) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('sec-' + sec).classList.add('active');
+  document.getElementById('pageTitle').textContent = sectionMap[sec] || sec;
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.textContent.trim().toLowerCase().includes(sectionMap[sec].toLowerCase().split(' ')[0].toLowerCase())) {
+      n.classList.add('active');
+    }
+  });
+  if (sec === 'dashboard') updateDashboard();
+  if (sec === 'players') renderPlayers();
+  if (sec === 'duties') renderDuties();
+  if (sec === 'finances') renderFinances();
+  if (sec === 'users') renderUsers();
+  if (sec === 'about') loadAbout();
+  closeSidebarOnMobile();
+}
+
+function toggleSidebar() {
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('sidebarOverlay');
+  sb.classList.toggle('open');
+  ov.classList.toggle('show');
+}
+function closeSidebarOnMobile() {
+  if (window.innerWidth <= 768) {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebarOverlay').classList.remove('show');
+  }
+}
+
+// ─────────────────────────────────────────────
+//  DASHBOARD
+// ─────────────────────────────────────────────
+function updateDashboard() {
+  const players = LS.get('kb2_players');
+  const finances = LS.get('kb2_finances');
+  const duties = LS.get('kb2_duties');
+  const users = LS.get('kb2_users');
+  const income = finances.filter(f=>f.type==='income').reduce((s,f)=>s+Number(f.amount),0);
+  document.getElementById('stat-players').textContent = players.length;
+  document.getElementById('stat-income').textContent = income.toLocaleString();
+  document.getElementById('stat-duties').textContent = duties.length;
+  document.getElementById('stat-users').textContent = users.length;
+  document.getElementById('playerBadge').textContent = players.length;
+}
+
+function logActivity(msg) {
+  activityLog.unshift({ msg, time: new Date().toLocaleTimeString() });
+  activityLog = activityLog.slice(0, 10);
+  const el = document.getElementById('recentActivity');
+  if (!el) return;
+  el.innerHTML = activityLog.map(a =>
+    `<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);">
+      <span style="font-size:18px">⚡</span>
+      <div style="flex:1"><div style="font-size:14px">${a.msg}</div><div class="text-muted">${a.time}</div></div>
+    </div>`
+  ).join('');
+}
+
+// ─────────────────────────────────────────────
+//  PLAYERS
+// ─────────────────────────────────────────────
+function openPlayerModal(idx = null) {
+  clearForm(['pFirstName','pLastName','pDOB','pJersey','pID','pPosition','pEditIndex']);
+  document.getElementById('photoPreview').style.display = 'none';
+  document.getElementById('uploadHint').style.display = '';
+  document.getElementById('photoInput').value = '';
+  document.getElementById('playerModalTitle').textContent = idx === null ? 'Add New Player' : 'Edit Player';
+  if (idx !== null) {
+    const p = LS.get('kb2_players')[idx];
+    document.getElementById('pFirstName').value = p.firstName;
+    document.getElementById('pLastName').value = p.lastName;
+    document.getElementById('pDOB').value = p.dob;
+    document.getElementById('pJersey').value = p.jersey;
+    document.getElementById('pID').value = p.idNum;
+    document.getElementById('pPosition').value = p.position;
+    document.getElementById('pEditIndex').value = idx;
+    if (p.photo) {
+      document.getElementById('photoPreview').src = p.photo;
+      document.getElementById('photoPreview').style.display = 'block';
+      document.getElementById('uploadHint').style.display = 'none';
+    }
+  }
+  openModal('playerModal');
+}
+
+function previewPhoto(input) {
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      document.getElementById('photoPreview').src = e.target.result;
+      document.getElementById('photoPreview').style.display = 'block';
+      document.getElementById('uploadHint').style.display = 'none';
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+function savePlayer() {
+  const fn   = document.getElementById('pFirstName').value.trim();
+  const ln   = document.getElementById('pLastName').value.trim();
+  const dob  = document.getElementById('pDOB').value;
+  const jer  = document.getElementById('pJersey').value;
+  const id   = document.getElementById('pID').value.trim();
+  const pos  = document.getElementById('pPosition').value;
+  const idx  = document.getElementById('pEditIndex').value;
+  const photo= document.getElementById('photoPreview').src;
+  if (!fn || !ln || !dob || !jer || !id || !pos) return toast('Please fill all required fields.', 'error');
+  const players = LS.get('kb2_players');
+  const pData = { firstName: fn, lastName: ln, dob, jersey: jer, idNum: id, position: pos,
+    photo: document.getElementById('photoPreview').style.display !== 'none' ? document.getElementById('photoPreview').src : '' };
+  if (idx !== '') { players[parseInt(idx)] = pData; toast('Player updated!', 'success'); }
+  else { players.push(pData); toast('Player added!', 'success'); logActivity(`Player ${fn} ${ln} added.`); }
+  LS.set('kb2_players', players);
+  closeModal('playerModal');
+  renderPlayers();
+  updateDashboard();
+}
+
+function deletePlayer(idx) {
+  if (!confirm('Delete this player?')) return;
+  const players = LS.get('kb2_players');
+  const name = players[idx].firstName + ' ' + players[idx].lastName;
+  players.splice(idx, 1);
+  LS.set('kb2_players', players);
+  toast('Player removed.', 'success');
+  logActivity(`Player ${name} removed.`);
+  renderPlayers();
+  updateDashboard();
+}
+
+function renderPlayers() {
+  const players = LS.get('kb2_players');
+  const search = (document.getElementById('playerSearch')?.value || '').toLowerCase();
+  const posF = document.getElementById('positionFilter')?.value || '';
+  let filtered = players.filter(p => {
+    const nm = (p.firstName + ' ' + p.lastName).toLowerCase();
+    return nm.includes(search) && (!posF || p.position === posF);
+  });
+  document.getElementById('playerCountBadge').textContent = filtered.length + ' Players';
+  document.getElementById('playerBadge').textContent = players.length;
+  const tbody = document.getElementById('playerTableBody');
+  if (!filtered.length) {
+    tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><div class="empty-icon">👕</div><h4>No players found</h4><p>Try adjusting your search or filters.</p></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = filtered.map((p, i) => {
+    const realIdx = players.indexOf(p);
+    const posColor = {Goalkeeper:'badge-yellow',Defender:'badge-sky',Midfielder:'badge-green',Forward:'badge-red'}[p.position]||'badge-gray';
+    const initials = (p.firstName[0]||'') + (p.lastName[0]||'');
+    const avatarHtml = p.photo ? `<img src="${p.photo}" alt="">` : initials;
+    const age = p.dob ? Math.floor((Date.now() - new Date(p.dob)) / 31557600000) : '—';
+    return `<tr>
+      <td><div class="player-cell">
+        <div class="player-avatar">${avatarHtml}</div>
+        <div><div class="pname">${p.firstName} ${p.lastName}</div><div class="pid">Age: ${age}</div></div>
+      </div></td>
+      <td>${p.dob || '—'}</td>
+      <td style="font-size:12px;font-family:monospace">${p.idNum}</td>
+      <td><strong style="font-family:'Barlow Condensed',sans-serif;font-size:18px">#${p.jersey}</strong></td>
+      <td><span class="badge ${posColor}">${p.position}</span></td>
+      <td><div class="flex gap-2">
+        <button class="btn btn-secondary btn-sm" onclick="openPlayerModal(${realIdx})">✏️ Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="deletePlayer(${realIdx})">🗑️</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+// ─────────────────────────────────────────────
+//  KIT DUTIES
+// ─────────────────────────────────────────────
+function openDutyModal(idx = null) {
+  clearForm(['dutyWeek','dutyDesc','dutyEditIndex']);
+  document.getElementById('dutyStatus').value = 'pending';
+  document.getElementById('dutyModalTitle').textContent = idx === null ? 'Assign Kit Duty' : 'Edit Duty';
+  // Populate player select
+  const players = LS.get('kb2_players');
+  const sel = document.getElementById('dutyPlayer');
+  sel.innerHTML = '<option value="">Select player…</option>' + players.map((p,i) => `<option value="${i}">${p.firstName} ${p.lastName} — #${p.jersey}</option>`).join('');
+  if (idx !== null) {
+    const d = LS.get('kb2_duties')[idx];
+    document.getElementById('dutyWeek').value = d.week;
+    document.getElementById('dutyPlayer').value = d.playerIdx;
+    document.getElementById('dutyDesc').value = d.desc || '';
+    document.getElementById('dutyStatus').value = d.status;
+    document.getElementById('dutyEditIndex').value = idx;
+  }
+  openModal('dutyModal');
+}
+
+function saveDuty() {
+  const week    = document.getElementById('dutyWeek').value.trim();
+  const pIdx    = document.getElementById('dutyPlayer').value;
+  const desc    = document.getElementById('dutyDesc').value.trim();
+  const status  = document.getElementById('dutyStatus').value;
+  const editIdx = document.getElementById('dutyEditIndex').value;
+  if (!week || pIdx === '') return toast('Please fill all required fields.', 'error');
+  const players = LS.get('kb2_players');
+  const duties  = LS.get('kb2_duties');
+  const pName   = players[pIdx] ? players[pIdx].firstName + ' ' + players[pIdx].lastName : '—';
+  const dData   = { week, playerIdx: pIdx, playerName: pName, desc, status };
+  if (editIdx !== '') { duties[parseInt(editIdx)] = dData; toast('Duty updated!', 'success'); }
+  else { duties.push(dData); toast('Duty assigned!', 'success'); logActivity(`Kit duty assigned to ${pName}.`); }
+  LS.set('kb2_duties', duties);
+  closeModal('dutyModal');
+  renderDuties();
+  updateDashboard();
+}
+
+function deleteDuty(idx) {
+  if (!confirm('Clear this duty?')) return;
+  const duties = LS.get('kb2_duties');
+  duties.splice(idx, 1);
+  LS.set('kb2_duties', duties);
+  toast('Duty cleared.', 'success');
+  renderDuties();
+  updateDashboard();
+}
+
+function renderDuties() {
+  const duties = LS.get('kb2_duties');
+  const board = document.getElementById('dutyBoard');
+  if (!duties.length) {
+    board.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">🧺</div><h4>No duties assigned</h4><p>Assign kit cleaning duties to your squad members.</p></div>';
+    return;
+  }
+  const stripeMap = { pending:'stripe-orange', 'in-progress':'stripe-red', done:'stripe-green' };
+  const badgeMap  = { pending:'badge-yellow', 'in-progress':'badge-red', done:'badge-green' };
+  const labelMap  = { pending:'⏳ Pending', 'in-progress':'🔄 In Progress', done:'✅ Done' };
+  board.innerHTML = duties.map((d, i) => `
+    <div class="duty-card">
+      <div class="stripe ${stripeMap[d.status]}"></div>
+      <div class="dc-head">
+        <span class="dc-week">${d.week}</span>
+        <span class="badge ${badgeMap[d.status]}">${labelMap[d.status]}</span>
+      </div>
+      <div class="dc-player">🧺 ${d.playerName}</div>
+      ${d.desc ? `<div class="text-muted mt-2" style="font-size:12px">${d.desc}</div>` : ''}
+      <div class="dc-actions">
+        <button class="btn btn-secondary btn-sm" onclick="openDutyModal(${i})">✏️ Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteDuty(${i})">🗑️ Clear</button>
+      </div>
+    </div>`).join('');
+}
+
+// ─────────────────────────────────────────────
+//  FINANCES
+// ─────────────────────────────────────────────
+function openFinModal(idx = null) {
+  clearForm(['finDate','finDesc','finAmount','finNotes','finEditIndex']);
+  document.getElementById('finType').value = 'income';
+  document.getElementById('finCat').value = 'Registration Fees';
+  document.getElementById('finModalTitle').textContent = idx === null ? 'Add Financial Entry' : 'Edit Financial Entry';
+  if (idx !== null) {
+    const f = LS.get('kb2_finances')[idx];
+    document.getElementById('finDate').value = f.date;
+    document.getElementById('finDesc').value = f.desc;
+    document.getElementById('finType').value = f.type;
+    document.getElementById('finCat').value  = f.category;
+    document.getElementById('finAmount').value = f.amount;
+    document.getElementById('finNotes').value  = f.notes || '';
+    document.getElementById('finEditIndex').value = idx;
+  }
+  openModal('finModal');
+}
+
+function saveFinance() {
+  const date    = document.getElementById('finDate').value;
+  const desc    = document.getElementById('finDesc').value.trim();
+  const type    = document.getElementById('finType').value;
+  const cat     = document.getElementById('finCat').value;
+  const amount  = parseFloat(document.getElementById('finAmount').value);
+  const notes   = document.getElementById('finNotes').value.trim();
+  const editIdx = document.getElementById('finEditIndex').value;
+  if (!date || !desc || !amount || isNaN(amount)) return toast('Please fill all required fields.', 'error');
+  const finances = LS.get('kb2_finances');
+  const fData = { date, desc, type, category: cat, amount, notes };
+  if (editIdx !== '') { finances[parseInt(editIdx)] = fData; toast('Entry updated!', 'success'); }
+  else { finances.push(fData); toast('Entry added!', 'success'); logActivity(`Finance: ${type === 'income' ? 'Income' : 'Expense'} — ${desc} (KES ${amount.toLocaleString()})`); }
+  LS.set('kb2_finances', finances);
+  closeModal('finModal');
+  renderFinances();
+  updateDashboard();
+}
+
+function deleteFinance(idx) {
+  if (!confirm('Delete this entry?')) return;
+  const finances = LS.get('kb2_finances');
+  finances.splice(idx, 1);
+  LS.set('kb2_finances', finances);
+  toast('Entry deleted.', 'success');
+  renderFinances();
+  updateDashboard();
+}
+
+function renderFinances() {
+  const finances = LS.get('kb2_finances');
+  const income   = finances.filter(f=>f.type==='income').reduce((s,f)=>s+Number(f.amount),0);
+  const expense  = finances.filter(f=>f.type==='expense').reduce((s,f)=>s+Number(f.amount),0);
+  const balance  = income - expense;
+  document.getElementById('finIncome').textContent  = 'KES ' + income.toLocaleString();
+  document.getElementById('finExpense').textContent = 'KES ' + expense.toLocaleString();
+  document.getElementById('finBalance').textContent = 'KES ' + balance.toLocaleString();
+  const tbody = document.getElementById('finTableBody');
+  if (!finances.length) {
+    tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><div class="empty-icon">💰</div><h4>No financial records</h4><p>Add income or expense entries.</p></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = [...finances].reverse().map((f, ri) => {
+    const realIdx = finances.length - 1 - ri;
+    return `<tr>
+      <td style="white-space:nowrap">${f.date}</td>
+      <td><strong>${f.desc}</strong>${f.notes ? `<br><span class="text-muted">${f.notes}</span>` : ''}</td>
+      <td><span class="badge badge-sky">${f.category}</span></td>
+      <td><span class="badge ${f.type==='income'?'badge-green':'badge-red'}">${f.type==='income'?'💚 Income':'🔴 Expense'}</span></td>
+      <td class="fw-700" style="color:${f.type==='income'?'var(--success)':'var(--danger)'}">
+        ${f.type==='income'?'+':'-'}KES ${Number(f.amount).toLocaleString()}
+      </td>
+      <td><div class="flex gap-2">
+        <button class="btn btn-secondary btn-sm" onclick="openFinModal(${realIdx})">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteFinance(${realIdx})">🗑️</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+function exportFinancePDF() {
+  const finances = LS.get('kb2_finances');
+  if (!finances.length) return toast('No financial data to export.', 'error');
+  const income = finances.filter(f=>f.type==='income').reduce((s,f)=>s+Number(f.amount),0);
+  const expense = finances.filter(f=>f.type==='expense').reduce((s,f)=>s+Number(f.amount),0);
+  const rows = finances.map(f => `${f.date}\t${f.desc}\t${f.category}\t${f.type}\tKES ${Number(f.amount).toLocaleString()}`).join('\n');
+  const content = `KICKBASE 2.0 — FINANCIAL REPORT\nGenerated: ${new Date().toLocaleString()}\n\nTotal Income:  KES ${income.toLocaleString()}\nTotal Expense: KES ${expense.toLocaleString()}\nNet Balance:   KES ${(income-expense).toLocaleString()}\n\n──────────────────────────────\nDate\tDescription\tCategory\tType\tAmount\n──────────────────────────────\n${rows}`;
+  const blob = new Blob([content], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'FCManager_Finance_' + new Date().toISOString().slice(0,10) + '.txt';
+  a.click();
+  toast('Finance report exported!', 'success');
+}
+
+// ─────────────────────────────────────────────
+//  ABOUT
+// ─────────────────────────────────────────────
+function saveAbout() {
+  const info = {
+    name: document.getElementById('clubName').value.trim(),
+    founded: document.getElementById('clubFounded').value.trim(),
+    ground: document.getElementById('clubGround').value.trim(),
+    league: document.getElementById('clubLeague').value.trim(),
+    motto: document.getElementById('clubMotto').value.trim(),
+    colors: document.getElementById('clubColors').value.trim(),
+    chairman: document.getElementById('clubChairman').value.trim(),
+    coach: document.getElementById('clubCoach').value.trim(),
+    manager: document.getElementById('clubManager').value.trim(),
+    email: document.getElementById('clubEmail').value.trim(),
+    phone: document.getElementById('clubPhone').value.trim(),
+    about: document.getElementById('clubAbout').value.trim(),
+  };
+  LS.set('kb2_about', info);
+  if (info.name) document.getElementById('aboutClubName').textContent = '⚽ ' + info.name.toUpperCase();
+  if (info.motto) document.getElementById('aboutClubMotto').textContent = info.motto;
+  toast('Club information saved!', 'success');
+  logActivity(`Club info updated.`);
+}
+
+function loadAbout() {
+  const info = LS.getObj('kb2_about');
+  if (info.name) { document.getElementById('clubName').value = info.name; document.getElementById('aboutClubName').textContent = '⚽ ' + info.name.toUpperCase(); }
+  if (info.founded) document.getElementById('clubFounded').value = info.founded;
+  if (info.ground) document.getElementById('clubGround').value = info.ground;
+  if (info.league) document.getElementById('clubLeague').value = info.league;
+  if (info.motto) { document.getElementById('clubMotto').value = info.motto; document.getElementById('aboutClubMotto').textContent = info.motto; }
+  if (info.colors) document.getElementById('clubColors').value = info.colors;
+  if (info.chairman) document.getElementById('clubChairman').value = info.chairman;
+  if (info.coach) document.getElementById('clubCoach').value = info.coach;
+  if (info.manager) document.getElementById('clubManager').value = info.manager;
+  if (info.email) document.getElementById('clubEmail').value = info.email;
+  if (info.phone) document.getElementById('clubPhone').value = info.phone;
+  if (info.about) document.getElementById('clubAbout').value = info.about;
+}
+
+// ─────────────────────────────────────────────
+//  USERS
+// ─────────────────────────────────────────────
+function renderUsers() {
+  const users = LS.get('kb2_users');
+  const search = (document.getElementById('userSearch')?.value || '').toLowerCase();
+  const filtered = users.filter(u => (u.first+' '+u.last+' '+u.email).toLowerCase().includes(search));
+  document.getElementById('userCountBadge').textContent = filtered.length + ' Users';
+  const tbody = document.getElementById('userTableBody');
+  if (!filtered.length) {
+    tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state"><div class="empty-icon">👥</div><h4>No users found</h4></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = filtered.map(u => {
+    const isCurrent = currentUser && currentUser.id === u.id;
+    return `<tr ${isCurrent ? 'style="background:var(--sky-pale)"' : ''}>
+      <td><div class="player-cell">
+        <div class="player-avatar" style="background:var(--sky-light);color:var(--sky-darker)">${u.first[0]}${u.last[0]}</div>
+        <div><div class="pname">${u.first} ${u.last} ${isCurrent ? '<span class="badge badge-sky">You</span>' : ''}</div></div>
+      </div></td>
+      <td>${u.email}</td>
+      <td><span class="badge badge-sky">${capitalize(u.role)}</span></td>
+      <td style="font-size:12px">${new Date(u.registered).toLocaleDateString()}</td>
+      <td>${!isCurrent ? `<button class="btn btn-danger btn-sm" onclick="deleteUser(${u.id})">🗑️ Remove</button>` : '—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function deleteUser(id) {
+  if (!confirm('Remove this user?')) return;
+  let users = LS.get('kb2_users').filter(u => u.id !== id);
+  LS.set('kb2_users', users);
+  toast('User removed.', 'success');
+  renderUsers();
+  updateDashboard();
+}
+
+// ─────────────────────────────────────────────
+//  MODAL HELPERS
+// ─────────────────────────────────────────────
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+document.querySelectorAll('.modal-backdrop').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+});
+
+function clearForm(ids) { ids.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; }); }
+
+// ─────────────────────────────────────────────
+//  TOAST
+// ─────────────────────────────────────────────
+function toast(msg, type='success') {
+  const c = document.getElementById('toastContainer');
+  const t = document.createElement('div');
+  t.className = `toast toast-${type}`;
+  t.innerHTML = (type==='success'?'✅':type==='error'?'❌':'ℹ️') + ' ' + msg;
+  c.appendChild(t);
+  setTimeout(() => { t.style.animation = 'toastOut 0.3s ease forwards'; setTimeout(() => t.remove(), 300); }, 3000);
+}
+
+// ─────────────────────────────────────────────
+//  UTILS
+// ─────────────────────────────────────────────
+function capitalize(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''; }
+
+// ─────────────────────────────────────────────
+//  LOADING SCREEN
+// ─────────────────────────────────────────────
+(function () {
+  const steps = [
+    { pct: 15,  msg: 'Loading resources…' },
+    { pct: 35,  msg: 'Connecting to database…' },
+    { pct: 55,  msg: 'Fetching club data…' },
+    { pct: 72,  msg: 'Preparing dashboard…' },
+    { pct: 88,  msg: 'Almost ready…' },
+    { pct: 100, msg: 'Welcome to KickBase 2.0!' },
+  ];
+
+  const bar    = document.getElementById('loaderBar');
+  const status = document.getElementById('loaderStatus');
+  const screen = document.getElementById('loadingScreen');
+  let i = 0;
+
+  function tick() {
+    if (i >= steps.length) return;
+    const s = steps[i++];
+    bar.style.width = s.pct + '%';
+    status.textContent = s.msg;
+    const delay = i === steps.length ? 400 : 420;
+    setTimeout(tick, delay);
+  }
+
+  setTimeout(tick, 300);
+
+  // Fade out after exactly 3 seconds
+  setTimeout(() => {
+    screen.classList.add('fade-out');
+    setTimeout(() => { screen.style.display = 'none'; }, 650);
+  }, 3000);
+})();
+
+</script>
+</body>
+</html>
